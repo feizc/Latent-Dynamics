@@ -2,6 +2,6 @@
 
 ## Model Structure 
 
-GPT2 + BERT 
+CVAE for latent variables modeling 
 
 ## Dataset 
