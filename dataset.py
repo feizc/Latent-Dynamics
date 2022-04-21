@@ -1,5 +1,13 @@
+import torch 
 import json 
 from torch.utils.data import Dataset  
+from PIL import Image
+import requests 
+
+
+SPECIAL_TOKENS = ["[bos]", "[eos]",] 
+SPECIAL_TOKENS_DICT = {'bos_token': "[bos]", 'eos_token': "[eos]"}
+
 
 
 def tokenize(obj,tokenizer):
@@ -10,14 +18,41 @@ def tokenize(obj,tokenizer):
     return list(tokenize(o, tokenizer) for o in obj)
 
 
+
 class VisualStoryDataset(Dataset): 
-    def __init__(self, data_list, tokenizer): 
+    def __init__(self, data_list, tokenizer, image_encoder, preprocess, device): 
         self.data_list = data_list 
         self.tokenizer = tokenizer 
+        self.image_encoder = image_encoder 
+        self.preprocess = preprocess 
+        self.device = device 
+        self.bos, self.eos = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
     
     def __len__(self): 
         return len(self.data_list) 
         
+    def __getitem__(self, index): 
+        story_pair = self.data_list[index] 
+        history_images = story_pair['history'][0] 
+        history_txt = story_pair['history'][1] 
+        caption = story_pair['caption']
+        image_features_list = [] 
+        for url in history_images: 
+            image = Image.open(requests.get(url, stream=True).raw)
+            image = self.preprocess(image).unsqueeze(0).to(self.device)
+            with torch.no_grad(): 
+                image_features = self.image_encoder.encode_image(image)
+            image_features_list.append(image_features) 
+        
+
+        history_txt_list = []
+        for txt in history_txt: 
+            txt_ids = torch.Tensor([self.bos] + tokenize(txt, self.tokenizer) + [self.eos]).long()
+            history_txt_list.append(txt_ids) 
+
+        caption_ids = torch.Tensor([self.bos] + tokenize(caption, self.tokenizer) + [self.eos]).long() 
+        return image_features_list, history_txt_list, caption_ids
+
 
 
 def data_preprocess(data_path): 
@@ -57,7 +92,7 @@ def build_input_from_story(data_path):
     for story_id in data_dict.keys(): 
         url_list = data_dict[story_id]['url'] 
         txt_list = data_dict[story_id]['txt'] 
-        for i in range(len(url_list)): 
+        for i in range(1, len(url_list)): 
             item = {} 
             item['history'] = [] 
             item['history'].append(url_list[:i+1]) 
