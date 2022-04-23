@@ -47,10 +47,10 @@ class VisualStoryDataset(Dataset):
 
         history_txt_list = []
         for txt in history_txt: 
-            txt_ids = torch.Tensor([self.bos] + tokenize(txt, self.tokenizer) + [self.eos]).long()
+            txt_ids = torch.Tensor([self.bos] + tokenize(txt, self.tokenizer) + [self.eos]).long().unsqueeze(0)
             history_txt_list.append(txt_ids) 
 
-        caption_ids = torch.Tensor([self.bos] + tokenize(caption, self.tokenizer) + [self.eos]).long() 
+        caption_ids = torch.Tensor([self.bos] + tokenize(caption, self.tokenizer) + [self.eos]).long().unsqueeze(0)
         return image_features_list, history_txt_list, caption_ids
 
 
