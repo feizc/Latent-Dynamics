@@ -1,5 +1,6 @@
-from transformers import GPT2Tokenizer, AdamW
-from argparse import ArgumentParser
+from transformers import GPT2Tokenizer, AdamW, get_linear_schedule_with_warmup
+from argparse import ArgumentParser 
+from torch.nn import functional as F
 import logging
 import random 
 import torch 
@@ -38,16 +39,24 @@ def build_input(image_features_list, history_txt_list, caption_ids, model, args)
     total_length = input_embs.size(1)
     labels = torch.zeros((1, total_length)) - 100
     labels[:,-caption_length+1:] = caption_ids[:, 1:]
+    labels = labels.long()
     return input_embs, labels 
 
 
 
-def train(model, optimizer, dataset, args): 
+def train(model, optimizer, scheduler, dataset, args): 
     model.train() 
     for idx, (image_features_list, history_txt_list, caption_ids) in enumerate(dataset): 
+        model.zero_grad()
         input_embs, labels = build_input(image_features_list, history_txt_list, caption_ids, model, args)
         logits = model(input_embs=input_embs) 
-        print(logits.size())
+        loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.flatten(), ignore_index=-100) 
+        print(loss)
+        loss.backward() 
+        optimizer.step() 
+        scheduler.step() 
+        optimizer.zero_grad() 
+
 
 
 
@@ -59,6 +68,8 @@ def main():
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--prefix_size', type=int, default=512)
     parser.add_argument('--prefix_length', type=int, default=10) 
+    parser.add_argument('--warmup_steps', type=int, default=5000) 
+    parser.add_argument('--epochs', type=int, default=20) 
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     args = parser.parse_args()
     random.seed(0)
@@ -83,10 +94,14 @@ def main():
     model_config = MultiCaptionGeneratorConfig() 
     model = MutiCaptionGenerator(model_config, args, tokenizer)  
     model = model.to(device) 
-    optimizer = AdamW(model.parameters(), lr=args.lr)
+    optimizer = AdamW(model.parameters(), lr=args.lr) 
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=args.epochs * len(dataset)
+    )
 
     logger.info('Model training') 
-    train(model, optimizer, dataset, args)
+    train(model, optimizer, scheduler, dataset, args) 
+
 
 
 
