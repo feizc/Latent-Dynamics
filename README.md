@@ -2,7 +2,7 @@
 
 ## Model Structure 
 
-CVAE for latent variables modeling 
+CVAE framework with latent variables modeling for sentence-level consistency
 
 ## Dataset 
 
