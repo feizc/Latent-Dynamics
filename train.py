@@ -5,7 +5,8 @@ import logging
 import random 
 import torch 
 import numpy as np 
-
+from tqdm import tqdm 
+import os 
 
 from dataset import build_input_from_story, VisualStoryDataset 
 import clip 
@@ -58,6 +59,8 @@ def build_input(image_features_list, history_txt_list, caption_ids, model, args)
 
 def train(model, optimizer, scheduler, dataset, args): 
     model.train() 
+    running_loss = .0 
+    progress = tqdm(total=len(dataset), desc='visual storytelling') 
     for idx, (image_features_list, history_txt_list, caption_ids) in enumerate(dataset): 
         model.zero_grad()
         input_embs, labels, sentence_index = build_input(image_features_list, history_txt_list, caption_ids, model, args)
@@ -66,7 +69,22 @@ def train(model, optimizer, scheduler, dataset, args):
         optimizer.step() 
         scheduler.step() 
         optimizer.zero_grad() 
-        break 
+        running_loss += loss.item() 
+        progress.set_postfix({"loss": running_loss / (idx + 1)})
+        progress.update() 
+        if idx % 10000 == 0:
+                torch.save({
+                    'torch_rng_state': torch.get_rng_state(),
+                    # 'cuda_rng_state': torch.cuda.get_rng_state(),
+                    'numpy_rng_state': np.random.get_state(),
+                    'random_rng_state': random.getstate(),
+                    'state_dict': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'scheduler': scheduler.state_dict(),
+                    }, os.path.join(args.output_dir, "latest.pt"),
+                )
+    progress.close() 
+    
 
 
 
@@ -76,7 +94,8 @@ def main():
     parser = ArgumentParser()  
     parser.add_argument("--data_path", type=str, default="./dataset/train.json", help="Path of the dataset") 
     parser.add_argument("--tokenizer_path", type=str, default="ckpt/gpt2", help="Path of the tokenizer") 
-    parser.add_argument("--clip_path", type=str, default="ckpt/clip/ViT-B-32.pt", help="Path of the clip model") 
+    parser.add_argument("--clip_path", type=str, default="ckpt/clip/ViT-B-32.pt", help="Path of the clip model")
+    parser.add_argument("--output_dir", type=str, default="ckpt/visual_storytelling", help="Path of the saving model")
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--prefix_size', type=int, default=512)
     parser.add_argument('--prefix_length', type=int, default=10) 
@@ -112,8 +131,8 @@ def main():
     )
 
     logger.info('Model training') 
-    train(model, optimizer, scheduler, dataset, args) 
-
+    for epoch in range(args.epochs):
+        train(model, optimizer, scheduler, dataset, args) 
 
 
 
