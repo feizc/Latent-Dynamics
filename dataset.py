@@ -5,8 +5,8 @@ from PIL import Image
 import requests 
 
 
-SPECIAL_TOKENS = ["[bos]", "[eos]",] 
-SPECIAL_TOKENS_DICT = {'bos_token': "[bos]", 'eos_token': "[eos]"}
+SPECIAL_TOKENS = ["[bos]", "[eos]", "[dyn]"] 
+SPECIAL_TOKENS_DICT = {'bos_token': "[bos]", 'eos_token': "[eos]", 'additional_special_tokens': ["[dyn]",]}
 
 
 
@@ -26,7 +26,7 @@ class VisualStoryDataset(Dataset):
         self.image_encoder = image_encoder 
         self.preprocess = preprocess 
         self.device = device 
-        self.bos, self.eos = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
+        self.bos, self.eos, self.dyn = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
     
     def __len__(self): 
         return len(self.data_list) 
@@ -47,10 +47,10 @@ class VisualStoryDataset(Dataset):
 
         history_txt_list = []
         for txt in history_txt: 
-            txt_ids = torch.Tensor([self.bos] + tokenize(txt, self.tokenizer) + [self.eos]).long().unsqueeze(0)
+            txt_ids = torch.Tensor([self.bos] + tokenize(txt, self.tokenizer) + [self.eos, self.dyn]).long().unsqueeze(0)
             history_txt_list.append(txt_ids) 
 
-        caption_ids = torch.Tensor([self.bos] + tokenize(caption, self.tokenizer) + [self.eos]).long().unsqueeze(0)
+        caption_ids = torch.Tensor([self.bos] + tokenize(caption, self.tokenizer) + [self.eos, self.dyn]).long().unsqueeze(0)
         return image_features_list, history_txt_list, caption_ids
 
 
