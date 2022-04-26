@@ -86,10 +86,6 @@ def train(model, optimizer, scheduler, dataset, args):
     progress.close() 
     
 
-
-
-
-
 def main(): 
     parser = ArgumentParser()  
     parser.add_argument("--data_path", type=str, default="./dataset/train.json", help="Path of the dataset") 
@@ -133,8 +129,6 @@ def main():
     logger.info('Model training') 
     for epoch in range(args.epochs):
         train(model, optimizer, scheduler, dataset, args) 
-
-
 
 
 

@@ -99,8 +99,8 @@ def build_input_from_story(data_path):
             item['history'].append(txt_list[:i]) 
             item['caption'] = txt_list[i] 
             data_list.append(item) 
-        break 
-    return data_list 
+        
+    return data_list[:100] 
 
 
 
