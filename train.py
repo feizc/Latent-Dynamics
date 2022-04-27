@@ -88,7 +88,8 @@ def train(model, optimizer, scheduler, dataset, args):
 
 def main(): 
     parser = ArgumentParser()  
-    parser.add_argument("--data_path", type=str, default="./dataset/train.json", help="Path of the dataset") 
+    parser.add_argument("--train_data_path", type=str, default="./dataset/train.json", help="Path of the training dataset") 
+    parser.add_argument("--val_data_path", type=str, default="./dataset/val.json", help="Path of the validation dataset") 
     parser.add_argument("--tokenizer_path", type=str, default="ckpt/gpt2", help="Path of the tokenizer") 
     parser.add_argument("--clip_path", type=str, default="ckpt/clip/ViT-B-32.pt", help="Path of the clip model")
     parser.add_argument("--output_dir", type=str, default="ckpt/visual_storytelling", help="Path of the saving model")
@@ -114,21 +115,24 @@ def main():
 
 
     logger.info('Prepare datasets') 
-    data_list = build_input_from_story(args.data_path) 
+    train_data_list = build_input_from_story(args.train_data_path) 
+    val_data_list = build_input_from_story(args.val_data_path) 
     # logger.info(data_list)
-    dataset = VisualStoryDataset(data_list, tokenizer, image_encoder, preprocess, device) 
+    train_dataset = VisualStoryDataset(train_data_list, tokenizer, image_encoder, preprocess, device) 
+    val_dataset = VisualStoryDataset(val_data_list, tokenizer, image_encoder, preprocess, device) 
 
     model_config = MultiCaptionGeneratorConfig() 
     model = MutiCaptionGenerator(model_config, args, tokenizer)  
     model = model.to(device) 
     optimizer = AdamW(model.parameters(), lr=args.lr) 
     scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=args.epochs * len(dataset)
+        optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=args.epochs * len(train_dataset)
     )
 
     logger.info('Model training') 
     for epoch in range(args.epochs):
-        train(model, optimizer, scheduler, dataset, args) 
+        train(model, optimizer, scheduler, train_dataset, args) 
+        
 
 
 

@@ -235,19 +235,19 @@ class VisualProject(nn.Module):
 
 
 class LatentDynamicModule(nn.Module): 
-    def __init__(self, args, config):
+    def __init__(self, args, config): 
+        super(LatentDynamicModule, self).__init__()
         self.args = args 
         self.config = config 
         self.wpe = nn.Embedding(256, config.n_embd) 
         self.drop = nn.Dropout(config.embd_pdrop) 
-        self.h = nn.ModuleList([Block(config.n_ctx, config, scale=True) for _ in range(2)]) 
+        self.h = nn.ModuleList([Block(256, config, scale=True) for _ in range(2)]) 
         self.ln_f = nn.LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.loss = nn.MSELoss()
-        self.device = args.device 
 
     def forward(self, sentence_hidden):
         hidden_states = sentence_hidden
-        position_ids = torch.arange(0, hidden_states.size(1), dtype=torch.long, device=self.device)
+        position_ids = torch.arange(0, hidden_states.size(1), dtype=torch.long, device=sentence_hidden.device)
         position_ids = position_ids.unsqueeze(0).view(-1, hidden_states.size(1))
         position_embeds = self.wpe(position_ids)
         hidden_states = hidden_states + position_embeds
@@ -273,18 +273,73 @@ class MutiCaptionGenerator(nn.Module):
 
         self.visual_project = VisualProject((args.prefix_size, (config.n_embd * args.prefix_length) // 2,
                                      config.n_embd * args.prefix_length)) 
-        self.lm_head = nn.Linear(config.n_embd, len(tokenizer), bias=False) 
+        self.lm_head = nn.Linear(2 * config.n_embd, len(tokenizer), bias=False) 
+        self.bow_head = nn.Linear(config.n_embd, len(tokenizer), bias=False)
+        self.latent_dynamic_module = LatentDynamicModule(args, config) 
+
+        self.loss_fct = CrossEntropyLoss(ignore_index=-100)
+        self.loss_bow = CrossEntropyLoss(ignore_index=-100)
+
     
-    def forward(self, input_embs, token_type_ids=None, attention_mask=None): 
+    def forward(self, input_embs, sentence_index, labels, token_type_ids=None, attention_mask=None): 
         transformer_outputs_outputs = self.captioner(
             inputs_embeds=input_embs, 
             token_type_ids=token_type_ids,
             attention_mask=attention_mask,
         ) 
-        hidden_states = transformer_outputs_outputs[0]
-        lm_logits = self.lm_head(hidden_states) 
+        hidden_states = transformer_outputs_outputs[0] # （bsz, seq_len, model_d）
+        
+        loss_gen_cum = 0 
+        loss_dyn_cum = 0 
+        loss_bow_cum = 0
 
-        return lm_logits
+        for j in range(hidden_states.size(0)): 
+            latent_dynamic_hiddents = hidden_states[j:j+1].index_select(1, sentence_index[1:]) # (bsz, num_of_dyn, model_d) 
+
+            latent_output, loss_dyn = self.latent_dynamic_module(latent_dynamic_hiddents) 
+            
+            hidden_states_list = [] 
+            labels_list = [] 
+            for i in range(sentence_index.size(0) - 1): 
+                start = sentence_index[i] + 1 + self.args.prefix_length
+                end = sentence_index[i+1] 
+                hidden_states_list.append(hidden_states[:, start: end]) 
+                labels_list.append(labels[:, start: end]) 
+            
+            hidden_logits_list = [] 
+            bow_logits_list = [] 
+
+            for i in range(len(labels_list)): 
+                temp_hidden_states = hidden_states_list[i] 
+                t_latent_hidden = latent_output[j][i].expand(temp_hidden_states.size(1), -1).unsqueeze(0) 
+                lm_logits = self.lm_head(torch.cat([t_latent_hidden, temp_hidden_states], dim=-1))
+                hidden_logits_list.append(lm_logits) 
+                
+                bow_logits = self.bow_head(latent_output[j][i].unsqueeze(0) )
+                bow_logits_list.append(bow_logits) 
+            
+            loss_gen_cum += self._compute_generation_loss(hidden_logits_list, labels_list) 
+            loss_bow_cum += self._compute_bow_loss(bow_logits_list, labels_list) 
+            loss_dyn_cum += loss_dyn 
+        return loss_gen_cum + loss_dyn_cum + loss_bow_cum 
+
+
+    def _compute_generation_loss(self, hidden_logits_list, labels_list):
+        loss = 0
+        for hidden, target in zip(hidden_logits_list, labels_list):
+            loss = loss + self.loss_fct(hidden[:, :-1, :].contiguous().view(-1, hidden.size(-1)),
+                                        target[:, 1:].contiguous().view(-1))
+        loss = loss / len(labels_list)
+        return loss
+    
+    def _compute_bow_loss(self, predictions, labels_list):
+        loss = 0
+        for pred, target in zip(predictions, labels_list):
+            pred = pred.expand(target.size(1), -1).unsqueeze(0)
+            loss = loss + self.loss_bow(pred[:, :-1, :].contiguous().view(-1, pred.size(-1)),
+                                        target[:, 1:].contiguous().view(-1))
+        loss = loss / len(labels_list)
+        return loss
     
     
 

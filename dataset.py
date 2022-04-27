@@ -79,7 +79,7 @@ def data_preprocess(data_path):
         story_dict[story_id]['url'].append(image_url_dict[image_id]) 
         story_dict[story_id]['txt'].append(item['text']) 
     
-    with open('./dataset/train.json', 'w', encoding='utf-8') as f: 
+    with open('./dataset/val.json', 'w', encoding='utf-8') as f: 
         json.dump(story_dict, f, indent=4)
 
 
@@ -105,6 +105,8 @@ def build_input_from_story(data_path):
 
 
 
-if __name__ == "__main__":
-    data_path = './dataset/VIST/sis/val.story-in-sequence.json' 
-    data_preprocess(data_path)
+if __name__ == "__main__": 
+    train_data_path = './dataset/VIST/sis/train.story-in-sequence.json' 
+    val_data_path = './dataset/VIST/sis/val.story-in-sequence.json' 
+    test_data_path = './dataset/VIST/sis/test.story-in-sequence.json' 
+    data_preprocess(val_data_path)

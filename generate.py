@@ -35,7 +35,9 @@ def main():
     model = MutiCaptionGenerator(model_config, args, tokenizer)  
     
     weight_dict = torch.load(args.model_checkpoint, map_location=None) 
-    model.load_state_dict(weight_dict['state_dict'], strict=False)
+    model.load_state_dict(weight_dict['state_dict'], strict=False) 
+
+    
 
 
 
