@@ -83,8 +83,10 @@ def train(model, optimizer, scheduler, dataset, args):
                     'scheduler': scheduler.state_dict(),
                     }, os.path.join(args.output_dir, "latest.pt"),
                 )
+        break
     progress.close() 
-    
+    logging.info(str(progress)) 
+    return running_loss
 
 def main(): 
     parser = ArgumentParser()  
@@ -98,13 +100,14 @@ def main():
     parser.add_argument('--prefix_length', type=int, default=10) 
     parser.add_argument('--warmup_steps', type=int, default=5000) 
     parser.add_argument('--epochs', type=int, default=20) 
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate") 
+    parser.add_argument('--log_path', type=str, default='log/output.log', help='Log file path')
     args = parser.parse_args()
     random.seed(0)
     torch.manual_seed(0)
     np.random.seed(0) 
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, filename=args.log_path)
 
 
     logger.info('Prepare tokenizer and model') 
@@ -131,8 +134,8 @@ def main():
 
     logger.info('Model training') 
     for epoch in range(args.epochs):
-        train(model, optimizer, scheduler, train_dataset, args) 
-        
+        running_loss = train(model, optimizer, scheduler, train_dataset, args) 
+        logging.info('loss: {loss}'.format(loss=running_loss))
 
 
 
