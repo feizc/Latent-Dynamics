@@ -280,7 +280,23 @@ class MutiCaptionGenerator(nn.Module):
         self.loss_fct = CrossEntropyLoss(ignore_index=-100)
         self.loss_bow = CrossEntropyLoss(ignore_index=-100)
 
-    
+
+    def step(self, input_embs, sentence_index, token_type_ids, attention_mask=None): 
+        transformer_outputs_outputs = self.captioner(
+            inputs_embeds=input_embs, 
+            token_type_ids=token_type_ids,
+            attention_mask=attention_mask,
+        ) 
+        hidden_states = transformer_outputs_outputs[0]  # （bsz, seq_len, model_d）
+
+        for j in range(hidden_states.size(0)): 
+            latent_dynamic_hiddents = hidden_states[j:j+1].index_select(1, sentence_index[1:]) 
+            latent_output, _ = self.latent_dynamic_module(latent_dynamic_hiddents) # (bsz, num_of_dyn, model_d)  
+
+        lm_logits = self.lm_head(torch.cat([hidden_states[:, -1, :], latent_output[:, -1, :]], dim=-1)) 
+        return lm_logits 
+
+
     def forward(self, input_embs, sentence_index, labels, token_type_ids=None, attention_mask=None): 
         transformer_outputs_outputs = self.captioner(
             inputs_embeds=input_embs, 

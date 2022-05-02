@@ -11,6 +11,7 @@ import os
 from dataset import build_input_from_story, VisualStoryDataset 
 import clip 
 from model import MultiCaptionGeneratorConfig, MutiCaptionGenerator
+from utils import accuracy_compute 
 
 
 logger = logging.getLogger(__file__)
@@ -60,7 +61,7 @@ def build_input(image_features_list, history_txt_list, caption_ids, model, args)
 def train(model, optimizer, scheduler, dataset, args): 
     model.train() 
     running_loss = .0 
-    progress = tqdm(total=len(dataset), desc='visual storytelling') 
+    progress = tqdm(total=len(dataset), desc='visual storytelling training') 
     for idx, (image_features_list, history_txt_list, caption_ids) in enumerate(dataset): 
         model.zero_grad()
         input_embs, labels, sentence_index = build_input(image_features_list, history_txt_list, caption_ids, model, args)
@@ -85,8 +86,27 @@ def train(model, optimizer, scheduler, dataset, args):
                 )
         break
     progress.close() 
-    logging.info(str(progress)) 
     return running_loss
+
+
+def eval(model, dataset, args): 
+    model.eval() 
+    running_loss = .0 
+    with torch.no_grad(): 
+        progress = tqdm(total=len(dataset), desc='visual storytelling evaluation') 
+        for idx, (image_features_list, history_txt_list, caption_ids) in enumerate(dataset): 
+            input_embs, labels, sentence_index = build_input(image_features_list, history_txt_list, caption_ids, model, args)
+            loss = model(input_embs=input_embs, sentence_index=sentence_index, labels=labels) 
+            running_loss += loss.item() 
+            progress.set_postfix({"loss": running_loss / (idx + 1)})
+            progress.update() 
+            break 
+        progress.close() 
+    return running_loss / len(dataset)
+
+
+
+
 
 def main(): 
     parser = ArgumentParser()  
@@ -99,7 +119,7 @@ def main():
     parser.add_argument('--prefix_size', type=int, default=512)
     parser.add_argument('--prefix_length', type=int, default=10) 
     parser.add_argument('--warmup_steps', type=int, default=5000) 
-    parser.add_argument('--epochs', type=int, default=20) 
+    parser.add_argument('--epochs', type=int, default=30) 
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate") 
     parser.add_argument('--log_path', type=str, default='log/output.log', help='Log file path')
     args = parser.parse_args()
@@ -134,8 +154,8 @@ def main():
 
     logger.info('Model training') 
     for epoch in range(args.epochs):
-        running_loss = train(model, optimizer, scheduler, train_dataset, args) 
-        logging.info('loss: {loss}'.format(loss=running_loss))
+        train_loss = train(model, optimizer, scheduler, train_dataset, args) 
+        val_loss = eval(model, val_dataset, args)
 
 
 
