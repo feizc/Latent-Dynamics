@@ -1,5 +1,8 @@
 # Latent-Dynamics 
 
+This is the PyTorch implementation for inference and training of the plan-CVAE framework as described in:
+
+> **Exploring Latent Dynamics for Visual Storytelling**
 
 
 <p align="center">
