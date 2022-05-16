@@ -1,7 +1,6 @@
-
 import torch
 import torch.nn as nn
-from torch.nn import CrossEntropyLoss, NLLLoss
+from torch.nn import CrossEntropyLoss, NLLLoss, KLDivLoss
 from transformers import *
 import torch.nn.functional as F
 from transformers.activations import ACT2FN
@@ -233,6 +232,20 @@ class VisualProject(nn.Module):
 
 
 
+class PriorNetwork(nn.Module): 
+    def __init__(self, d_in, d_out):
+        super(PriorNetwork, self).__init__() 
+        self.mean = nn.Linear(d_in, d_out) 
+        self.logvar = nn.Linear(d_in, d_out) 
+    
+    def forward(self, input_emb): 
+        mean = self.mean(input_emb) 
+        logvar = self.logvar(input_emb) 
+
+        outputs = (mean, logvar,) 
+        return outputs 
+
+
 
 class LatentDynamicModule(nn.Module): 
     def __init__(self, args, config): 
@@ -262,7 +275,6 @@ class LatentDynamicModule(nn.Module):
 
 
 
-
 class MutiCaptionGenerator(nn.Module): 
     def __init__(self, config, args, tokenizer):
         super(MutiCaptionGenerator, self).__init__()
@@ -273,12 +285,16 @@ class MutiCaptionGenerator(nn.Module):
 
         self.visual_project = VisualProject((args.prefix_size, (config.n_embd * args.prefix_length) // 2,
                                      config.n_embd * args.prefix_length)) 
-        self.lm_head = nn.Linear(2 * config.n_embd, len(tokenizer), bias=False) 
+        
+        self.latent_project = PriorNetwork(config.n_embd, config.n_latent_variables)
+        self.n_latent_variables = config.n_latent_variables
+        self.lm_head = nn.Linear(config.n_embd + config.n_latent_variables, len(tokenizer), bias=False) 
         self.bow_head = nn.Linear(config.n_embd, len(tokenizer), bias=False)
         self.latent_dynamic_module = LatentDynamicModule(args, config) 
 
         self.loss_fct = CrossEntropyLoss(ignore_index=-100)
         self.loss_bow = CrossEntropyLoss(ignore_index=-100)
+
 
 
     def step(self, input_embs, sentence_index, token_type_ids, attention_mask=None): 
@@ -292,12 +308,13 @@ class MutiCaptionGenerator(nn.Module):
         for j in range(hidden_states.size(0)): 
             latent_dynamic_hiddents = hidden_states[j:j+1].index_select(1, sentence_index[1:]) 
             latent_output, _ = self.latent_dynamic_module(latent_dynamic_hiddents) # (bsz, num_of_dyn, model_d)  
-
-        lm_logits = self.lm_head(torch.cat([hidden_states[:, -1, :], latent_output[:, -1, :]], dim=-1)) 
+            latent_mean, _ = self.latent_project(latent_output) 
+            z = latent_mean
+        lm_logits = self.lm_head(torch.cat([hidden_states[:, -1, :], z[:, -1, :]], dim=-1)) 
         return lm_logits 
 
 
-    def forward(self, input_embs, sentence_index, labels, token_type_ids=None, attention_mask=None): 
+    def forward(self, input_embs, sentence_index, labels, token_type_ids=None, attention_mask=None, from_mean=False): 
         transformer_outputs_outputs = self.captioner(
             inputs_embeds=input_embs, 
             token_type_ids=token_type_ids,
@@ -308,6 +325,7 @@ class MutiCaptionGenerator(nn.Module):
         loss_gen_cum = 0 
         loss_dyn_cum = 0 
         loss_bow_cum = 0
+        loss_kl_cum = 0
 
         for j in range(hidden_states.size(0)): 
             latent_dynamic_hiddents = hidden_states[j:j+1].index_select(1, sentence_index[1:]) # (bsz, num_of_dyn, model_d) 
@@ -324,11 +342,20 @@ class MutiCaptionGenerator(nn.Module):
             
             hidden_logits_list = [] 
             bow_logits_list = [] 
+            kl_latent_list = []
 
             for i in range(len(labels_list)): 
                 temp_hidden_states = hidden_states_list[i] 
                 t_latent_hidden = latent_output[j][i].expand(temp_hidden_states.size(1), -1).unsqueeze(0) 
-                lm_logits = self.lm_head(torch.cat([t_latent_hidden, temp_hidden_states], dim=-1))
+                
+                latent_mean, latent_logvar = self.latent_project(t_latent_hidden) 
+                if from_mean: 
+                    z = latent_mean 
+                else:
+                    z = self.reparameterize(latent_mean, latent_logvar)  
+                kl_latent_list.append([latent_mean, latent_logvar])
+
+                lm_logits = self.lm_head(torch.cat([z, temp_hidden_states], dim=-1))
                 hidden_logits_list.append(lm_logits) 
                 
                 bow_logits = self.bow_head(latent_output[j][i].unsqueeze(0) )
@@ -337,7 +364,8 @@ class MutiCaptionGenerator(nn.Module):
             loss_gen_cum += self._compute_generation_loss(hidden_logits_list, labels_list) 
             loss_bow_cum += self._compute_bow_loss(bow_logits_list, labels_list) 
             loss_dyn_cum += loss_dyn 
-        return loss_gen_cum + loss_dyn_cum + loss_bow_cum 
+            loss_kl_cum += self._compute_kl_loss(kl_latent_list)
+        return loss_gen_cum + loss_dyn_cum + loss_bow_cum + loss_kl_cum 
 
 
     def _compute_generation_loss(self, hidden_logits_list, labels_list):
@@ -357,6 +385,25 @@ class MutiCaptionGenerator(nn.Module):
         loss = loss / len(labels_list)
         return loss
     
+    def reparameterize(self, mean, logvar, z=None):
+        std = logvar.mul(0.5).exp()
+        if z is None:
+            z = torch.randn(std.size(), device=mean.device, dtype=mean.dtype)
+        return z.mul(std) + mean 
     
+    def kl_loss(self, mean1, logvar1, mean2, logvar2):
+        exponential = logvar1 - logvar2 - torch.pow(mean1 - mean2, 2) / logvar2.exp() - torch.exp(logvar1 - logvar2) + 1
+        result = -0.5 * torch.sum(exponential, tuple(range(1, len(exponential.shape))))
+        return result.mean()
 
+
+    def _compute_kl_loss(self, kl_latent_list): 
+        loss = 0 
+        for i in range(len(kl_latent_list)): 
+            mean, logvar = kl_latent_list[i]
+            prior_mean, prior_logvar = mean[:, :-1, :], logvar[:, :-1, :]
+            posterior_mean, posterior_logvar = mean[:, 1:, :], logvar[:, 1:, :]
+            loss += self.kl_loss(posterior_mean.view(-1, self.n_latent_variables), posterior_logvar.view(-1, self.n_latent_variables), \
+                                prior_mean.view(-1, self.n_latent_variables), prior_logvar.view(-1, self.n_latent_variables)).unsqueeze(0) 
+        return loss
         
