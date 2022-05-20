@@ -1,9 +1,10 @@
-# Latent-Dynamics 
+# plan-CVAE
 
 This is the PyTorch implementation for inference and training of the plan-CVAE framework as described in:
 
 > **Exploring Latent Dynamics for Visual Storytelling**
 
+Inspired by the visual story creation process that humans always consider the influence of the next sentence before they continue the story writing, we address the story generation by learning an information dynamic plan in a latent space for every sentence.
 
 <p align="center">
      <img src="https://github.com/feizc/Latent-Dynamics/blob/main/images/case.png" alt="Latent Dynamics">
