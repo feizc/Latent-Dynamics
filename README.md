@@ -10,15 +10,24 @@ Inspired by the visual story creation process that humans always consider the in
      <img src="https://github.com/feizc/Latent-Dynamics/blob/main/images/case.png" alt="Latent Dynamics">
      <br/>
      <sub><em>
-      Generating visual story conditioned on latent dynamics. <br/> 
-      A latent variable is first generated with latent dynamic module according to history story. A visual story generator then conditionally generates the next coherent sentence with this latent plan guiding.
+      Generating visual story conditioned on latent dynamics. 
     </em></sub>
 </p>
 
 
 ## Model Structure 
 
-CVAE framework with latent variables modeling for sentence-level consistency
+The intuition behind the plan-CVAE framework is to learn a latent space with smooth temporal dynamics for modeling and generating a coherent visual story. 
+The following figure illustrates the generation process of a visual story generator guided by a latent dynamic module. 
+
+<p align="center">
+     <img src="https://github.com/feizc/Latent-Dynamics/blob/main/images/framework.png" alt="plan-CVAE">
+     <br/>
+     <sub><em>
+      Overview of the proposed plan-CVAE framework. 
+    </em></sub>
+</p>
+
 
 ## Dataset 
 
