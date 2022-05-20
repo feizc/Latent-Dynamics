@@ -30,6 +30,26 @@ The following figure illustrates the generation process of a visual story genera
 
 
 ## Dataset 
+1. Download the visual storytelling dataset [VIST](https://visionandlanguage.net/VIST/) and put to the path ```./dataset```.
+2. Preprocess data following ```python dataset.py```. 
 
-[VIST](https://visionandlanguage.net/VIST/) 
+
+## Training
+
+To training the plan-CVAE model on the corresponding dataset, run
+```
+.train.sh
+```
+
+Script has several important hyper-parameters that you can play with:
+- ```--train_data_path```: Path of the training dataset. 
+- ```--val_data_path```: Path of the validation dataset. 
+- ```--output_dir```: Path of the saving model. 
+
+
+
+
+## Contact Information
+For help or issues related to this package, please submit a GitHub issue. 
+
 
