@@ -1,4 +1,4 @@
-# plan-CVAE: Exploring Latent Dynamics for Visual Storytelling
+# Exploring Latent Dynamics for Visual Storytelling
 
 This is the PyTorch implementation for inference and training of the plan-CVAE framework as described in:
 
@@ -34,9 +34,15 @@ The following figure illustrates the generation process of a visual story genera
 2. Preprocess data following ```python dataset.py```. 
 
 
+## Requirements
+1. torch==1.10
+2. transformers==4.12
+
+
+
 ## Training
 
-To training the plan-CVAE model on the corresponding dataset, run
+To training the plan-CVAE model on the corresponding dataset, run:
 ```
 .train.sh
 ```
@@ -45,6 +51,14 @@ Script has several important hyper-parameters that you can play with:
 - ```--train_data_path```: Path of the training dataset. 
 - ```--val_data_path```: Path of the validation dataset. 
 - ```--output_dir```: Path of the saving model. 
+
+
+## CDE Score
+
+To evaluate the performance of visual storytelling systerm, run:
+```
+python CDE_score.py
+```
 
 
 
