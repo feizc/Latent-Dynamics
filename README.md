@@ -30,7 +30,7 @@ The following figure illustrates the generation process of a visual story genera
 
 
 ## Dataset 
-1. Download the visual storytelling dataset, e.g., [VIST](https://visionandlanguage.net/VIST/) and [VSPE](https://github.com/tingyaohsu/VIST-Edit), and put to the data path ```./dataset```.
+1. Download the visual storytelling dataset, e.g., [VIST](https://visionandlanguage.net/VIST/) and [VSPE](https://github.com/tingyaohsu/VIST-Edit), and put it under the data path ```./dataset```.
 2. Preprocess data following ```python dataset.py```. 
 
 
