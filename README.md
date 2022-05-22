@@ -15,7 +15,7 @@ Inspired by the visual story creation process that humans always consider the in
 </p>
 
 
-## Model Structure 
+## 1. Model Structure 
 
 The intuition behind the plan-CVAE framework is to learn a latent space with smooth temporal dynamics for modeling and generating a coherent visual story. 
 The following figure illustrates the generation process of a visual story generator guided by a latent dynamic module. 
@@ -29,18 +29,18 @@ The following figure illustrates the generation process of a visual story genera
 </p>
 
 
-## Dataset 
+## 2. Dataset 
 1. Download the visual storytelling dataset, e.g., [VIST](https://visionandlanguage.net/VIST/) and [VSPE](https://github.com/tingyaohsu/VIST-Edit), and put it under the data path ```./dataset```.
 2. Preprocess data following ```python dataset.py```. 
 
 
-## Requirements
+## 3. Requirements
 1. torch==1.10
 2. transformers==4.12
 
 
 
-## Training
+## 4. Training
 
 To training the plan-CVAE model on the corresponding dataset, run:
 ```
@@ -53,7 +53,7 @@ Script has several important hyper-parameters that you can play with:
 - ```--output_dir```: Path of the saving model. 
 
 
-## CDE Score
+## 5. CDE Score Evaluation 
 
 To evaluate the performance of visual storytelling systerm, run:
 ```
@@ -62,8 +62,7 @@ python CDE_score.py
 
 
 
-
-## Contact Information
+## 6. Contact Information
 For help or issues related to this package, please submit a GitHub issue. 
 
 
