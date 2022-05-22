@@ -44,7 +44,7 @@ The following figure illustrates the generation process of a visual story genera
 
 To training the plan-CVAE model on the corresponding dataset, run:
 ```
-.train.sh
+bash train.sh
 ```
 
 Script has several important hyper-parameters that you can play with:
