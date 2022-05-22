@@ -62,7 +62,7 @@ python CDE_score.py
 
 
 
-## 6. Contact Information
+## Contact Information
 For help or issues related to this package, please submit a GitHub issue. 
 
 
