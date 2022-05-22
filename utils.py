@@ -1,5 +1,9 @@
 import torch 
 
+SPECIAL_TOKENS = ["[bos]", "[eos]", "[dyn]", "[img]", "[txt]"] 
+SPECIAL_TOKENS_DICT = {'bos_token': "[bos]", 'eos_token': "[eos]", 'additional_special_tokens': ["[dyn]", "[img]", "[txt]"],}
+
+
 def accuracy_compute(logits, labels, top_k=5, ignore_index=-100): 
     bsz, seq_len, _ = logits.size()
     logits = logits.contiguous().view(bsz*seq_len, -1)

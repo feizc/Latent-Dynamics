@@ -3,11 +3,7 @@ import json
 from torch.utils.data import Dataset  
 from PIL import Image
 import requests 
-
-
-SPECIAL_TOKENS = ["[bos]", "[eos]", "[dyn]"] 
-SPECIAL_TOKENS_DICT = {'bos_token': "[bos]", 'eos_token': "[eos]", 'additional_special_tokens': ["[dyn]",]}
-
+from utils import SPECIAL_TOKENS, SPECIAL_TOKENS_DICT 
 
 
 def tokenize(obj,tokenizer):
@@ -26,7 +22,7 @@ class VisualStoryDataset(Dataset):
         self.image_encoder = image_encoder 
         self.preprocess = preprocess 
         self.device = device 
-        self.bos, self.eos, self.dyn = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
+        self.bos, self.eos, self.dyn, _, _ = tokenizer.convert_tokens_to_ids(SPECIAL_TOKENS)
     
     def __len__(self): 
         return len(self.data_list) 
@@ -79,7 +75,7 @@ def data_preprocess(data_path):
         story_dict[story_id]['url'].append(image_url_dict[image_id]) 
         story_dict[story_id]['txt'].append(item['text']) 
     
-    with open('./dataset/val.json', 'w', encoding='utf-8') as f: 
+    with open('./dataset/test.json', 'w', encoding='utf-8') as f: 
         json.dump(story_dict, f, indent=4)
 
 
@@ -109,4 +105,4 @@ if __name__ == "__main__":
     train_data_path = './dataset/VIST/sis/train.story-in-sequence.json' 
     val_data_path = './dataset/VIST/sis/val.story-in-sequence.json' 
     test_data_path = './dataset/VIST/sis/test.story-in-sequence.json' 
-    data_preprocess(val_data_path)
+    data_preprocess(train_data_path)
