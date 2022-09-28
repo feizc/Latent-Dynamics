@@ -80,7 +80,7 @@ def train(model, optimizer, scheduler, dataset, args):
         if idx % 10000 == 0:
                 torch.save({
                     'torch_rng_state': torch.get_rng_state(),
-                    # 'cuda_rng_state': torch.cuda.get_rng_state(),
+                    'cuda_rng_state': torch.cuda.get_rng_state(),
                     'numpy_rng_state': np.random.get_state(),
                     'random_rng_state': random.getstate(),
                     'state_dict': model.state_dict(),
@@ -88,7 +88,6 @@ def train(model, optimizer, scheduler, dataset, args):
                     'scheduler': scheduler.state_dict(),
                     }, os.path.join(args.output_dir, "latest.pt"),
                 )
-        break
     progress.close() 
     return running_loss
 
@@ -104,7 +103,6 @@ def eval(model, dataset, args):
             running_loss += loss.item() 
             progress.set_postfix({"loss": running_loss / (idx + 1)})
             progress.update() 
-            break 
         progress.close() 
     return running_loss / len(dataset)
 
@@ -126,6 +124,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate") 
     parser.add_argument('--log_path', type=str, default='log/output.log', help='Log file path')
     args = parser.parse_args()
+    
     random.seed(0)
     torch.manual_seed(0)
     np.random.seed(0) 

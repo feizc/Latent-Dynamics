@@ -16,6 +16,9 @@ def tokenize(obj,tokenizer):
 
 
 class VisualStoryDataset(Dataset): 
+    """
+    split into context-text pair 
+    """
     def __init__(self, data_list, tokenizer, image_encoder, preprocess, device): 
         self.data_list = data_list 
         self.tokenizer = tokenizer 
@@ -105,4 +108,4 @@ if __name__ == "__main__":
     train_data_path = './dataset/VIST/sis/train.story-in-sequence.json' 
     val_data_path = './dataset/VIST/sis/val.story-in-sequence.json' 
     test_data_path = './dataset/VIST/sis/test.story-in-sequence.json' 
-    data_preprocess(train_data_path)
+    data_preprocess(train_data_path) 

@@ -14,6 +14,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class CDEScore: 
+    """
+    calculate the semantic change matchness
+    """
     def __init__(self, args, tokenizer):
         self.config = MultiCaptionGeneratorConfig() 
         self.model = MutiCaptionGenerator(self.config, args, tokenizer)

@@ -280,6 +280,7 @@ class MutiCaptionGenerator(nn.Module):
         super(MutiCaptionGenerator, self).__init__()
         self.args = args 
         self.config = config 
+        self.tokenizer = tokenizer
         self.captioner = GPT2Model.from_pretrained(args.tokenizer_path) 
         self.captioner.resize_token_embeddings(len(tokenizer))
 
@@ -314,7 +315,7 @@ class MutiCaptionGenerator(nn.Module):
         return lm_logits 
 
 
-    def forward(self, input_embs, sentence_index, labels, token_type_ids=None, attention_mask=None, from_mean=False): 
+    def forward(self, input_embs, token_type_ids, sentence_index, labels, attention_mask=None, from_mean=False): 
         transformer_outputs_outputs = self.captioner(
             inputs_embeds=input_embs, 
             token_type_ids=token_type_ids,
