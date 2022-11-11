@@ -23,7 +23,6 @@ def accuracy_compute(logits, labels, top_k=5, ignore_index=-100):
     return correct_total / float(length) 
 
 
-
 def fasterrcnn_resnet152_fpn(pretrained=False, progress=True,
                             num_classes=91, pretrained_backbone=False,
                              trainable_backbone_layers=3, **kwargs):
@@ -44,9 +43,9 @@ def faster_rcnn_initilize(model_path):
     return model 
      
 
-
+# extract faster-rcnn features of 2048 dimension 
 def faster_rcnn_feature_extraction(model, image): 
-    # hook for fc6 layer 2048 dimension 
+    # hook for fc6 layer 
     model.eval()
     outputs = []
     hook = model.backbone.register_forward_hook(

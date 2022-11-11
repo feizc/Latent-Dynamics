@@ -217,7 +217,6 @@ class Block(nn.Module):
 
 
 class VisualProject(nn.Module):
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
@@ -235,6 +234,7 @@ class VisualProject(nn.Module):
 class PriorNetwork(nn.Module): 
     def __init__(self, d_in, d_out):
         super(PriorNetwork, self).__init__() 
+
         self.mean = nn.Linear(d_in, d_out) 
         self.logvar = nn.Linear(d_in, d_out) 
     
@@ -274,7 +274,6 @@ class LatentDynamicModule(nn.Module):
         return hidden_states, loss 
 
 
-
 class MutiCaptionGenerator(nn.Module): 
     def __init__(self, config, args, tokenizer):
         super(MutiCaptionGenerator, self).__init__()
@@ -295,7 +294,6 @@ class MutiCaptionGenerator(nn.Module):
 
         self.loss_fct = CrossEntropyLoss(ignore_index=-100)
         self.loss_bow = CrossEntropyLoss(ignore_index=-100)
-
 
 
     def step(self, input_embs, sentence_index, token_type_ids, attention_mask=None): 
@@ -377,6 +375,7 @@ class MutiCaptionGenerator(nn.Module):
         loss = loss / len(labels_list)
         return loss
     
+
     def _compute_bow_loss(self, predictions, labels_list):
         loss = 0
         for pred, target in zip(predictions, labels_list):
@@ -386,12 +385,14 @@ class MutiCaptionGenerator(nn.Module):
         loss = loss / len(labels_list)
         return loss
     
+
     def reparameterize(self, mean, logvar, z=None):
         std = logvar.mul(0.5).exp()
         if z is None:
             z = torch.randn(std.size(), device=mean.device, dtype=mean.dtype)
         return z.mul(std) + mean 
     
+
     def kl_loss(self, mean1, logvar1, mean2, logvar2):
         exponential = logvar1 - logvar2 - torch.pow(mean1 - mean2, 2) / logvar2.exp() - torch.exp(logvar1 - logvar2) + 1
         result = -0.5 * torch.sum(exponential, tuple(range(1, len(exponential.shape))))

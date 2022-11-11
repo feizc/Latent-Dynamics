@@ -1,4 +1,5 @@
-class MultiCaptionGeneratorConfig():
+class MultiCaptionGeneratorConfig(): 
+    # configurations for plan-cvae
     def __init__(
         self,
         vocab_size=50257,

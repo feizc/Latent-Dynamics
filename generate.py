@@ -126,6 +126,7 @@ def main():
     test_data_list = build_input_from_story(args.test_data_path) 
     test_dataset = VisualStoryDataset(test_data_list, tokenizer, image_encoder, preprocess, device) 
 
+    logger.info('Begin to generate') 
     model.eval() 
     generate_list = []
     with torch.no_grad(): 
@@ -136,7 +137,6 @@ def main():
                 caps = beam_search(image_features_list, history_txt_list, model, tokenizer, args)[0][0]
             sentence = tokenizer.decode(caps) 
             generate_list.append(sentence)
-            break 
 
     with open('story_result.txt', 'w', encoding='utf-8') as f: 
         for l in generate_list: 
@@ -145,3 +145,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

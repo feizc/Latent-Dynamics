@@ -61,7 +61,6 @@ def build_input(image_features_list, history_txt_list, caption_ids, model, args)
     return input_embs, labels, sentence_index, token_types
 
 
-
 def train(model, optimizer, scheduler, dataset, args): 
     model.train() 
     running_loss = .0 
@@ -105,7 +104,6 @@ def eval(model, dataset, args):
             progress.update() 
         progress.close() 
     return running_loss / len(dataset)
-
 
 
 
@@ -154,12 +152,22 @@ def main():
         optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=args.epochs * len(train_dataset)
     )
     
+
     logger.info('Model training') 
+    best_val_loss = 100.0 
+    patience = 0 
     for epoch in range(args.epochs):
         train_loss = train(model, optimizer, scheduler, train_dataset, args) 
-        val_loss = eval(model, val_dataset, args)
-
+        val_loss = eval(model, val_dataset, args) 
+        if val_loss < best_val_loss: 
+            best_val_loss = val_loss 
+            patience = 0 
+        else:
+            patience += 1
+            if patience > 5:
+                break 
 
 
 if __name__ == "__main__":
     main()
+    

@@ -74,7 +74,7 @@ def eval():
         input_embs, _, sentence_index, token_types = build_input(image_features_list, history_txt_list, caption_ids, CDE_scorer.model, args) 
         CDE_score = CDE_scorer.score(input_embs, sentence_index, token_types)
         CDE_score_list.append(CDE_score) 
-        break 
+        
 
     with open('cde_result.txt', 'w', encoding='utf-8') as f: 
         for score in CDE_score_list: 
@@ -83,3 +83,4 @@ def eval():
 
 if __name__ == "__main__":
     eval()
+    
