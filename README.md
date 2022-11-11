@@ -29,14 +29,18 @@ The following figure illustrates the generation process of a visual story genera
 </p>
 
 
-## 2. Dataset 
+
+## 2. Requirements
+
+Clone the repository and install the package for environment using the `requirements.txt` file:
+```
+pip install -r requirements.txt
+```
+
+
+## 3. Dataset 
 1. Download the visual storytelling dataset, e.g., [VIST](https://visionandlanguage.net/VIST/) and [VSPE](https://github.com/tingyaohsu/VIST-Edit), and put it under the data path ```./dataset```.
-2. Preprocess data following ```python dataset.py```. 
-
-
-## 3. Requirements
-1. torch==1.10
-2. transformers==4.12
+2. Preprocess data with the provided script and run: ```python dataset.py```. 
 
 
 
