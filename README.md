@@ -7,7 +7,7 @@ This is the PyTorch implementation for inference and training of the plan-CVAE f
 Inspired by the visual story creation process that humans always consider the influence of the next sentence before they continue the story writing, we address the story generation by learning an information dynamic plan in a latent space for every sentence.
 
 <p align="center">
-     <img src="https://github.com/feizc/Latent-Dynamics/blob/main/images/case.png" alt="Latent Dynamics">
+     <img src="images/case.png" alt="Latent Dynamics">
      <br/>
      <sub><em>
       Generating visual story conditioned on latent dynamics. 
@@ -21,7 +21,7 @@ The intuition behind the plan-CVAE framework is to learn a latent space with smo
 The following figure illustrates the generation process of a visual story generator guided by a latent dynamic module. 
 
 <p align="center">
-     <img src="https://github.com/feizc/Latent-Dynamics/blob/main/images/framework.png" alt="plan-CVAE">
+     <img src="images/framework.png" alt="plan-CVAE">
      <br/>
      <sub><em>
       Overview of the proposed plan-CVAE framework. 
